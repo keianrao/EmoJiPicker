@@ -2,7 +2,7 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Collections;
 
 public class Backend {
@@ -62,7 +62,7 @@ private final Map<String, List<Emoji>> emojiGroups;
 //  Constructors    \\  //  \\  //  \\  //  \\
 
 Backend() {
-    emojiGroups = new HashMap<>();
+    emojiGroups = new LinkedHashMap<>();
 }
 
 }
