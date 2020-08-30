@@ -20,14 +20,33 @@ public void loadEmojiData(Backend backend) throws FileNotFoundException, IOExcep
         );
         // Don't print the file name or path, err on privacy's side
     }
-    loadEmojiData(
-        readAllLinesFromFile(testDataFile),
-        backend
-    );
+
+    List<String> original = linesFromFileAsList(testDataFile);
+    List<SerialisedEmojiGroup> assembled = 
+        assembleSerialisedEmojiGroups(original);
+    List<EmojiGroup> deserialised = deserialiseEmojiGroups(assembled);
+
+    for (EmojiGroup emojiGroup: deserialised) {
+        backend.addToEmojiGroup(emojiGroup.groupID, emojiGroup.emojis);
+    }
 }
 
 public void setTestDataFile(String filepath) {
     testDataFile = new File(filepath);
+}
+
+
+
+//  Structs \\  //  \\  //  \\  //  \\  //  \\
+
+public static class EmojiGroup {
+    String groupID;
+    List<Backend.Emoji> emojis;
+}
+
+public static class SerialisedEmojiGroup {
+    String groupNameLine;
+    List<String> dataLines;
 }
 
 
@@ -40,118 +59,6 @@ private File testDataFile = new File("data/emoji-test.txt");
 
 
 //  Helper functions    //  \\  //  \\  //  \\
-
-public static void loadEmojiData(List<String> linesFromTestDataFile,
-Backend backend) {
-    // We will assemble these, to load into the backend later..
-    class EmojiGroup {
-        String groupID;
-        final List<Backend.Emoji> emojis = new LinkedList<>();
-    }
-    List<EmojiGroup> groups = new LinkedList<EmojiGroup>();
-
-    // Filter out all the lines we don't want to parse.
-    List<String> lines =
-         filterForGroupCommentsAndDataLines(linesFromTestDataFile);
-    if (lines.size() == 0) return;
-
-    // Okay, let's start building the emoji groups.
-    EmojiGroup currentGroup = null;
-    for (String line: lines) {
-        // Split it like a group comment line, see what happens.
-        String[] groupNameFields = line.split("group: ");
-        if (groupNameFields.length > 1) {
-            // The split worked, so this is a group comment line.
-
-            // If not in our first group, then we finished this one,
-            // submit it.
-            if (currentGroup != null) {
-                groups.add(currentGroup);
-                currentGroup = new EmojiGroup();
-            }
-
-            // Okay, started new group. Set its ID.
-            currentGroup.groupID = groupNameFields[1].trim();
-            continue;
-        }
-
-        // Otherwise, this line is a data line.
-        line = line.replaceAll("#.*$", ""); // Delete EOL comment
-        // Okay, now we have 'code points; status'
-        String[] dataLineFields = line.split(";");
-        assert dataLineFields.length > 1;
-
-        // Ignore emoji sequence if its status is not fully qualified
-        String status = dataLineFields[1].trim();
-        if (!status.equals("fully-qualified")) {
-            continue;
-        }
-
-        // Okay, parse the code points and create the emoji.
-        // Then insert it in the current group.
-        StringBuilder qualifiedSequence = new StringBuilder();
-        for (String unparsedCodePoint: dataLineFields[0].split("\\w+")) {
-            int parsedCodePoint = parseUnicodeScalar(unparsedCodePoint);
-            qualifiedSequence.append(parsedCodePoint);
-        }
-        Backend.Emoji currentEmoji = new Backend.Emoji();
-        currentEmoji.qualifiedSequence = qualifiedSequence.toString();
-        assert currentGroup != null;
-        // This assertion can fail when the first line is a data line
-        // rather than a group name comment (which would've started
-        // the first group). How should we handle it?
-        currentGroup.add(currentEmoji);
-    }
-
-    // Okay, finished all our lines. Our current group is the last one
-    // and hasn't been submitted, so submit it now.
-    groups.add(currentGroup);
-
-
-    // Finally, load all the groups into the backend.
-    for (EmojiGroup group: groups) {
-        backend.addToEmojiGroup(group.groupID, group.emojis);
-    }
-}
-
-
-
-public static List<String> readAllLinesFromFile(File file) throws IOException {
-    /*
-    * A better and modern way would be to give Stream<String>.
-    * There is even BufferedReader#lines for this.
-    * But we'll stick to pre-1.8 methods for now.
-    */
-
-    List<String> lines = new ArrayList<>();
-
-    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            lines.add(line);
-        }
-    }
-
-    return lines;
-}
-
-public static List<String> filterForGroupCommentsAndDataLines(List<String> lines) {
-    List<String> filteredLines = new ArrayList<>();
-
-    for (String line: lines) {
-        boolean isGroupComment = line.matches("^# *group:.*");
-        boolean isDataLine = line.matches("^[^#].*");
-        boolean isBlankLine = line.matches("^\\s*$");
-        if (isBlankLine) continue;
-        if (!isGroupComment && !isDataLine) continue;
-        filteredLines.add(line);
-    }
-
-    return filteredLines;
-}
-
-
-
 
 public static int parseUnicodeScalar(String string) {
     assert string.matches("^[0-9a-fA-F]+$");
@@ -166,5 +73,102 @@ public static int parseUnicodeScalar(String string) {
         return 0;
     }
 }
+
+public static List<String> linesFromFileAsList(File file) throws IOException {
+    /*
+    * Since 1.8 there is the Streams API, which is recommended for
+    * this kind of purpose since it lazily loads.
+    * But anyways I am sticking to pre-1.8 methods.
+    */
+    List<String> lines = new ArrayList<>();
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            lines.add(line);
+        }
+    }
+    return lines;
+}
+
+public static List<SerialisedEmojiGroup> assembleSerialisedEmojiGroups(List<String> lines) {
+    // We'll go through the lines sequentially. We'll assume that
+    // *below* each group name line are data lines belonging to the group.
+    // We are fine with lines we don't recognise, we will just ignore them.
+    List<SerialisedEmojiGroup> groups = new LinkedList<>();
+    SerialisedEmojiGroup currentGroup = null;
+    for (String line: lines) {
+        if (isGroupNameLine(line)) {
+            if (currentGroup != null) {
+                groups.add(currentGroup);
+            }
+            currentGroup = new SerialisedEmojiGroup();
+            currentGroup.groupNameLine = line;
+        }
+        else if (isDataLine(line)) {
+            if (currentGroup == null) {
+                // There's no group name line preceeding this data line,
+                // that would've started a group we can enter this line into.
+                // What should we do?
+                continue;
+            }
+            currentGroup.dataLines.add(line);
+        }
+        // Lines of any other type, ignore them.
+        else continue;
+    }
+    return groups;
+}
+
+public static List<EmojiGroup> deserialiseEmojiGroups(List<SerialisedEmojiGroup> serialisedEmojiGroups) {
+    List<EmojiGroup> deserialisedGroups = new LinkedList<>();
+
+    for (SerialisedEmojiGroup serialisedGroup: serialisedEmojiGroups) {
+        EmojiGroup deserialisedGroup = new EmojiGroup();
+        
+        // Parse the group name line.
+        String[] groupNameLineFields = 
+            serialisedGroup.groupNameLine.split(":", 1);
+        assert groupNameLineFields.length == 2;
+        deserialisedGroup.groupID = groupNameLineFields[1].trim();
+ 
+        // Parse each data line.
+        for (String dataLine: serialisedGroup.dataLines) {
+            String[] dataLineFields = dataLine
+                .replaceAll("#[^#]*$", "") // Remove EOL comment
+                .split(";");
+            assert dataLineFields.length == 2;
+
+            String status = dataLineFields[1].trim();
+            if (!status.equals("fully-qualified")) {
+                // We ignore emoji sequences that aren't fully qualified.
+                continue;
+            }
+
+            String[] serialisedCodePoints = dataLineFields[0].split("\\s+");
+            StringBuilder qualifiedSequenceSb = new StringBuilder();
+            for (String serialisedCodePoint: serialisedCodePoints) {
+                int deserialisedCodePoint = 
+                    parseUnicodeScalar(serialisedCodePoint);
+                qualifiedSequenceSb
+                    .append(Character.toChars(deserialisedCodePoint));
+            }
+
+            Backend.Emoji emoji = new Backend.Emoji();
+            emoji.qualifiedSequence = qualifiedSequenceSb.toString();
+            deserialisedGroup.emojis.add(emoji);
+        }
+    }
+
+    return deserialisedGroups;
+}
+
+public static boolean isGroupNameLine(String line) {
+        return line.matches("#\\s*group:.*");
+}
+
+public static boolean isDataLine(String line) {
+        return line.matches("[^#].+;.+");
+}
+
 
 }

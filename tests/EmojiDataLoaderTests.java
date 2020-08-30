@@ -6,8 +6,10 @@ public class EmojiDataLoaderTests {
 
 public static void testAll() {
     testParseUnicodeScalar();
+    /*
     testFilterForGroupCommentsAndDataLines();
     testLoadEmojiData();
+    */
 }
 
 public static void testParseUnicodeScalar() {
@@ -25,6 +27,7 @@ public static void testParseUnicodeScalar() {
     // We'll just test that it understands this syntax we're reading.
 }
 
+/*
 public static void testFilterForGroupCommentsAndDataLines() {
     List<String> lines = new LinkedList<String>();
     List<String> response1, response2, response3;
@@ -95,6 +98,7 @@ public static void testFilterForGroupCommentsAndDataLines() {
 public static void testLoadEmojiData() {
 
 }
+*/
 
 
 
