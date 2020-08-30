@@ -8,14 +8,14 @@ tests:
 	javac tests/*.java
 
 clean:
-	rm *.class
-	rm tests/*.class
+	rm *.class || :
+	rm tests/*.class || :
 
 run-main:
 	java SwingGUI
 
 run-tests:
-	java tests.EmojiDataLoaderTests
-	java tests.BackendTests
+	java -cp .:tests -ea EmojiDataLoaderTests
+	java -cp .:tests -ea BackendTests
 
 .PHONY: all main tests clean run-main run-tests
