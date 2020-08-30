@@ -1,34 +1,43 @@
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 
 public class BackendTests {
 
 public static void testAll() {
     testInterfaceNeverGivesNull();
-    testAddingSmileys();
+    testAddingToEmojiGroup();
 }
 
 public static void testInterfaceNeverGivesNull() {
     Backend backendInstance = new Backend();
-    assert backendInstance.getSmileyEmojis() != null;
+
+    assert backendInstance.getEmojiGroup("claypotのputera") != null;
+    assert backendInstance.getEmojiGroup("11011010aaabb") != null;
+    assert backendInstance.getAllEmojis() != null;
+
+    Backend.Emoji e = new Backend.Emoji();
+    e.qualifiedSequence = "🔵";
+    backendInstance.addToEmojiGroup("test", Collections.singletonList(e));
+    assert backendInstance.getEmojiGroup("test") != null;
     assert backendInstance.getAllEmojis() != null;
 }
 
-public static void testAddingSmileys() {
-    Backend.Emoji newSmiley1, newSmiley2;
-    newSmiley1 = new Backend.Emoji();
-    newSmiley1.value = "this is not an emoji";
-    newSmiley2 = new Backend.Emoji();
-    newSmiley2.value = "👌";
-    List<Backend.Emoji> newSmileys = new ArrayList<Backend.Emoji>();
-    newSmileys.add(newSmiley1);
-    newSmileys.add(newSmiley2);
+public static void testAddingToEmojiGroup() {
+    Backend.Emoji newEmoji1, newEmoji2;
+    newEmoji1 = new Backend.Emoji();
+    newEmoji2 = new Backend.Emoji();
+    newEmoji1.qualifiedSequence = "🎇";
+    newEmoji2.qualifiedSequence = "👌";
+    List<Backend.Emoji> newEmojis = new ArrayList<Backend.Emoji>();
+    newEmojis.add(newEmoji1);
+    newEmojis.add(newEmoji2);
 
     Backend backendInstance = new Backend();
-    backendInstance.addSmileyEmojis(newSmileys);
-    List<Backend.Emoji> savedSmileys = backendInstance.getSmileyEmojis();
+    backendInstance.addToEmojiGroup("test", newEmojis);
+    List<Backend.Emoji> savedSmileys = backendInstance.getEmojiGroup("test");
     assert savedSmileys.size() == 0;
     // Right now we expect addition to fail
 }

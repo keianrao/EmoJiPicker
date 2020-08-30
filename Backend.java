@@ -1,6 +1,8 @@
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Collections;
 
 public class Backend {
@@ -10,14 +12,16 @@ public class Backend {
 public List<Emoji> getAllEmojis() {
     /*
     List<Emoji> returnee = new ArrayList<>();
-    returnee.addAll(smileys);
+    for (List<Emoji> emojiGroup: emojiGroups.values()) {
+        returnee.addAll(emojiGroup);
+    }
     return returnee;
     */
 
     return Collections.emptyList();
 }
 
-public List<Emoji> getSmileyEmojis() {
+public List<Emoji> getEmojiGroup(String groupID) {
     /*
     return new ArrayList<Emoji>(smileys);
     */
@@ -25,7 +29,7 @@ public List<Emoji> getSmileyEmojis() {
     return Collections.emptyList();
 }
 
-public void addSmileyEmojis(List<Emoji> emojis) {
+public void addToEmojiGroup(String groupID, List<Emoji> emojis) {
     /*
     smileys.addAll(emojis);
     */
@@ -34,24 +38,31 @@ public void addSmileyEmojis(List<Emoji> emojis) {
 }
 
 
+
 //  Structs     //  \\  //  \\  //  \\  //  \\
 
 public static class Emoji {
-    String value;
+    String qualifiedSequence;
+    /*
+    * Obtuse name to be clear what should be inside.. This is the whole emoji,
+    * you can embed it inside strings or use it as a label, etc.
+    */
+
     // Using a dedicated class just in case we need to extend later..
 }
 
 
+
 //  Private data    \\  //  \\  //  \\  //  \\
 
-private final List<Emoji> smileys;
+private final Map<String, List<Emoji>> emojiGroups;
+
 
 
 //  Constructors    \\  //  \\  //  \\  //  \\
 
 Backend() {
-    int likelyAverageNumberOfEmojisPerCategory = 64;
-    smileys = new ArrayList<>(likelyAverageNumberOfEmojisPerCategory);
+    emojiGroups = new HashMap<>();
 }
 
 }
