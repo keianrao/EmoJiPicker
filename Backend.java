@@ -10,31 +10,26 @@ public class Backend {
 //  Interface   //  \\  //  \\  //  \\  //  \\
 
 public List<Emoji> getAllEmojis() {
-    /*
     List<Emoji> returnee = new ArrayList<>();
     for (List<Emoji> emojiGroup: emojiGroups.values()) {
         returnee.addAll(emojiGroup);
     }
     return returnee;
-    */
-
-    return Collections.emptyList();
 }
 
 public List<Emoji> getEmojiGroup(String groupID) {
-    /*
-    return new ArrayList<Emoji>(smileys);
-    */
-
-    return Collections.emptyList();
+    List<Emoji> group = emojiGroups.get(groupID);
+    if (group == null) return Collections.emptyList();
+    else return new ArrayList<>(group);
 }
 
 public void addToEmojiGroup(String groupID, List<Emoji> emojis) {
-    /*
-    smileys.addAll(emojis);
-    */
-
-    return;
+    List<Emoji> group = emojiGroups.get(groupID);
+    if (group == null) {
+        group = new ArrayList<>();
+        emojiGroups.put(groupID, group);
+    }
+    group.addAll(emojis);
 }
 
 

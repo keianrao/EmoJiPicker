@@ -3,12 +3,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 
-
 public class BackendTests {
 
 public static void testAll() {
     testInterfaceNeverGivesNull();
-    testAddingToEmojiGroup();
+    testAdditionInterface();
 }
 
 public static void testInterfaceNeverGivesNull() {
@@ -25,8 +24,11 @@ public static void testInterfaceNeverGivesNull() {
     assert backendInstance.getAllEmojis() != null;
 }
 
-public static void testAddingToEmojiGroup() {
-    Backend.Emoji newEmoji1, newEmoji2;
+public static void testAdditionInterface() {
+    Backend backendInstance = new Backend();
+    List<Backend.Emoji> originalAllEmojis = backendInstance.getAllEmojis();
+
+    Backend.Emoji newEmoji1, newEmoji2, newEmoji3;
     newEmoji1 = new Backend.Emoji();
     newEmoji2 = new Backend.Emoji();
     newEmoji1.qualifiedSequence = "🎇";
@@ -34,12 +36,22 @@ public static void testAddingToEmojiGroup() {
     List<Backend.Emoji> newEmojis = new ArrayList<Backend.Emoji>();
     newEmojis.add(newEmoji1);
     newEmojis.add(newEmoji2);
+    backendInstance.addToEmojiGroup("Test", newEmojis);
+    List<Backend.Emoji> savedGroup = backendInstance.getEmojiGroup("Test");
+    assert savedGroup.size() == 2;
 
-    Backend backendInstance = new Backend();
-    backendInstance.addToEmojiGroup("test", newEmojis);
-    List<Backend.Emoji> savedSmileys = backendInstance.getEmojiGroup("test");
-    assert savedSmileys.size() == 0;
-    // Right now we expect addition to fail
+    newEmoji3 = new Backend.Emoji();
+    newEmoji3.qualifiedSequence = "🗻 ";
+    newEmojis.clear();
+    newEmojis.add(newEmoji3);
+    savedGroup = backendInstance.getEmojiGroup("Test");
+    assert savedGroup.size() == 2;
+    backendInstance.addToEmojiGroup("Test", newEmojis);
+    savedGroup = backendInstance.getEmojiGroup("Test");
+    assert savedGroup.size() == 3;
+
+    List<Backend.Emoji> newAllEmojis = backendInstance.getAllEmojis();
+    assert newAllEmojis.size() == originalAllEmojis.size() + 3;
 }
 
 //  \\  //  \\  //  \\  //  \\  //  \\  //  \\
