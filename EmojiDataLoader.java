@@ -12,7 +12,17 @@ public void loadEmojiData(Backend backend) {
 //  \\  //  \\  //  \\  //  \\  //  \\  //  \\
 
 public static int parseUnicodeScalar(String string) {
-    return 0b00000000000000000000000000000000;
+    assert string.matches("^[0-9a-fA-F]+$");
+    // We can use \p{XDigit} but this is clearer
+    // If this is failing for you, check that you didn't input O instead of 0
+
+    try {
+        return Integer.parseInt(string, 16);
+    }
+    catch (NumberFormatException eNf) {
+        assert false;
+        return 0;
+    }
 }
 
 }
