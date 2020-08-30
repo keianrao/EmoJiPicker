@@ -1,0 +1,16 @@
+
+This is a speed programming project (1-2 working days worth of hours) for a emoji-picking GUI window. It does not perform any rendering, all the buttons have the Unicode emoji character as a text label.
+
+<hr>
+
+The program has two parts.
+
+The first part is the backend and data loader - the latter tries to parse the 'Unicode data files' obtained from www.unicode.org (see 'data' folder in project root), into "renderable" lists of emoji in the former.
+
+The second part is the GUI, which should be a fairly typical and straightforward AWT/Swing GUI.
+
+<hr>
+
+The first part is 100% functions or open objects, so they should be accompanied by unit tests.
+
+The second part for now will only be manually tested.
