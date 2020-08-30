@@ -41,12 +41,12 @@ public void setTestDataFile(String filepath) {
 
 public static class EmojiGroup {
     String groupID;
-    List<Backend.Emoji> emojis;
+    final List<Backend.Emoji> emojis = new LinkedList<>();
 }
 
 public static class SerialisedEmojiGroup {
     String groupNameLine;
-    List<String> dataLines;
+    final List<String> dataLines = new LinkedList<>();
 }
 
 
@@ -59,20 +59,6 @@ private File testDataFile = new File("data/emoji-test.txt");
 
 
 //  Helper functions    //  \\  //  \\  //  \\
-
-public static int parseUnicodeScalar(String string) {
-    assert string.matches("^[0-9a-fA-F]+$");
-    // We can use \p{XDigit} but this is clearer
-    // If this is failing for you, check that you didn't input O instead of 0
-
-    try {
-        return Integer.parseInt(string, 16);
-    }
-    catch (NumberFormatException eNf) {
-        assert false;
-        return 0;
-    }
-}
 
 public static List<String> linesFromFileAsList(File file) throws IOException {
     /*
@@ -90,34 +76,42 @@ public static List<String> linesFromFileAsList(File file) throws IOException {
     return lines;
 }
 
+
+
 public static List<SerialisedEmojiGroup> assembleSerialisedEmojiGroups(List<String> lines) {
     // We'll go through the lines sequentially. We'll assume that
     // *below* each group name line are data lines belonging to the group.
     // We are fine with lines we don't recognise, we will just ignore them.
     List<SerialisedEmojiGroup> groups = new LinkedList<>();
-    SerialisedEmojiGroup currentGroup = null;
+    SerialisedEmojiGroup currentGroup = new SerialisedEmojiGroup();
+    currentGroup.groupNameLine = "# group: Ungrouped";
+    // The code in this module relies heavy on a certain syntax,
+    // so it's okay for us to write our own line like this, probably.
     for (String line: lines) {
         if (isGroupNameLine(line)) {
-            if (currentGroup != null) {
-                groups.add(currentGroup);
-            }
+            groups.add(currentGroup);
             currentGroup = new SerialisedEmojiGroup();
             currentGroup.groupNameLine = line;
         }
         else if (isDataLine(line)) {
-            if (currentGroup == null) {
-                // There's no group name line preceeding this data line,
-                // that would've started a group we can enter this line into.
-                // What should we do?
-                continue;
-            }
             currentGroup.dataLines.add(line);
         }
         // Lines of any other type, ignore them.
         else continue;
     }
+    groups.add(currentGroup);
     return groups;
 }
+
+public static boolean isGroupNameLine(String line) {
+        return line.matches("#\\s*group:.*");
+}
+
+public static boolean isDataLine(String line) {
+        return line.matches("[^#].+;.+");
+}
+
+
 
 public static List<EmojiGroup> deserialiseEmojiGroups(List<SerialisedEmojiGroup> serialisedEmojiGroups) {
     List<EmojiGroup> deserialisedGroups = new LinkedList<>();
@@ -127,7 +121,7 @@ public static List<EmojiGroup> deserialiseEmojiGroups(List<SerialisedEmojiGroup>
         
         // Parse the group name line.
         String[] groupNameLineFields = 
-            serialisedGroup.groupNameLine.split(":", 1);
+            serialisedGroup.groupNameLine.split(":", 2);
         assert groupNameLineFields.length == 2;
         deserialisedGroup.groupID = groupNameLineFields[1].trim();
  
@@ -145,30 +139,37 @@ public static List<EmojiGroup> deserialiseEmojiGroups(List<SerialisedEmojiGroup>
             }
 
             String[] serialisedCodePoints = dataLineFields[0].split("\\s+");
-            StringBuilder qualifiedSequenceSb = new StringBuilder();
+            StringBuilder qualifiedSequenceBuilder = new StringBuilder();
             for (String serialisedCodePoint: serialisedCodePoints) {
                 int deserialisedCodePoint = 
                     parseUnicodeScalar(serialisedCodePoint);
-                qualifiedSequenceSb
+                qualifiedSequenceBuilder
                     .append(Character.toChars(deserialisedCodePoint));
             }
 
             Backend.Emoji emoji = new Backend.Emoji();
-            emoji.qualifiedSequence = qualifiedSequenceSb.toString();
+            emoji.qualifiedSequence = qualifiedSequenceBuilder.toString();
             deserialisedGroup.emojis.add(emoji);
         }
+
+        deserialisedGroups.add(deserialisedGroup);
     }
 
     return deserialisedGroups;
 }
 
-public static boolean isGroupNameLine(String line) {
-        return line.matches("#\\s*group:.*");
-}
+public static int parseUnicodeScalar(String string) {
+    assert string.matches("^[0-9a-fA-F]+$");
+    // We can use \p{XDigit} but this is clearer
+    // If this is failing for you, check that you didn't input O instead of 0
 
-public static boolean isDataLine(String line) {
-        return line.matches("[^#].+;.+");
+    try {
+        return Integer.parseInt(string, 16);
+    }
+    catch (NumberFormatException eNf) {
+        assert false;
+        return 0;
+    }
 }
-
 
 }
