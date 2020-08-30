@@ -38,6 +38,7 @@ public static void testFilterForGroupCommentsAndDataLines() {
     response1 = EmojiDataLoader.filterForGroupCommentsAndDataLines(lines);
     assert response1.size() == 0;
 
+    // Add data-line-like lines that shouldn't be ignored
     lines.add(2, "1F448");
     lines.add("1F448 ; fully-qualified");
     lines.add("1F448 2708");
@@ -45,11 +46,50 @@ public static void testFilterForGroupCommentsAndDataLines() {
     response2 = EmojiDataLoader.filterForGroupCommentsAndDataLines(lines);
     assert response2.size() == 4;
 
+    // Add group comment lines
     lines.add(4, "# group: Test I");
     lines.add(6, "# group:Test II");
     lines.add("#group: Test III");
     response3 = EmojiDataLoader.filterForGroupCommentsAndDataLines(lines);
     assert response3.size() == 7;
+
+    // Okay, final clarification..
+    List<String> exampleUnfilteredFile = new LinkedList<String>();
+    List<String> filteredExampleFile = new LinkedList<String>();
+    List<String> response4;
+    for (String l: new String[] {
+        "#   • The file is in CLDR order, not codepoint order.",
+        "#   • The groups and subgroups are illustrative.",
+        " ",
+        "# group: Smileys & Emotion",
+        "",
+        "# subgroup: face-smiling",
+        "1F600                                      ; fully-qualified",
+        "1F603                                      ; fully-qualified",
+        "",
+        "# subgroup: face-tongue",
+        "1F60B                                      ; fully-qualified",
+        "",
+        "# group: People & Body",
+        "",
+        "# subgroup: hand-fingers-open",
+        "1F44B                                      ; fully-qualified",
+        "1F44B 1F3FB                                ; fully-qualified",
+        "1F44B 1F3FC                                ; fully-qualified"
+    }) exampleUnfilteredFile.add(l);
+    for (String l: new String[] {
+        "# group: Smileys & Emotion",
+        "1F600                                      ; fully-qualified",
+        "1F603                                      ; fully-qualified",
+        "1F60B                                      ; fully-qualified",
+        "# group: People & Body",
+        "1F44B                                      ; fully-qualified",
+        "1F44B 1F3FB                                ; fully-qualified",
+        "1F44B 1F3FC                                ; fully-qualified"
+    }) filteredExampleFile.add(l);
+    response4 = EmojiDataLoader
+        .filterForGroupCommentsAndDataLines(exampleUnfilteredFile);
+    assert response4.equals(filteredExampleFile);
 }
 
 public static void testLoadEmojiData() {

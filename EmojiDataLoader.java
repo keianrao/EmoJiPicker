@@ -43,6 +43,7 @@ private File testDataFile = new File("data/emoji-test.txt");
 
 public static void loadEmojiData(List<String> linesFromTestDataFile,
 Backend backend) {
+    // We will assemble these, to load into the backend later..
     class EmojiGroup {
         String groupID;
         final List<Backend.Emoji> emojis = new LinkedList<>();
@@ -54,21 +55,22 @@ Backend backend) {
          filterForGroupCommentsAndDataLines(linesFromTestDataFile);
     if (lines.size() == 0) return;
 
-    // Okay, we will be building the emoji groups now.
-    EmojiGroup currentGroup = new EmojiGroup();
+    // Okay, let's start building the emoji groups.
+    EmojiGroup currentGroup = null;
     for (String line: lines) {
+        // Split it like a group comment line, see what happens.
         String[] groupNameFields = line.split("group: ");
         if (groupNameFields.length > 1) {
-            // Then this line is a group name comment line.
-            if (groups.size() > 0) {
-                /*
-                * If not so, then we're still in our first group,
-                * it's not finished so don't perform this block.
-                */
+            // The split worked, so this is a group comment line.
+
+            // If not in our first group, then we finished this one,
+            // submit it.
+            if (currentGroup != null) {
                 groups.add(currentGroup);
                 currentGroup = new EmojiGroup();
             }
 
+            // Okay, started new group. Set its ID.
             currentGroup.groupID = groupNameFields[1].trim();
             continue;
         }
@@ -79,12 +81,14 @@ Backend backend) {
         String[] dataLineFields = line.split(";");
         assert dataLineFields.length > 1;
 
+        // Ignore emoji sequence if its status is not fully qualified
         String status = dataLineFields[1].trim();
         if (!status.equals("fully-qualified")) {
-            // We ignore emojis that aren't fully qualified for our picker
             continue;
         }
 
+        // Okay, parse the code points and create the emoji.
+        // Then insert it in the current group.
         StringBuilder qualifiedSequence = new StringBuilder();
         for (String unparsedCodePoint: dataLineFields[0].split("\\w+")) {
             int parsedCodePoint = parseUnicodeScalar(unparsedCodePoint);
@@ -92,12 +96,17 @@ Backend backend) {
         }
         Backend.Emoji currentEmoji = new Backend.Emoji();
         currentEmoji.qualifiedSequence = qualifiedSequence.toString();
+        assert currentGroup != null;
+        // This assertion can fail when the first line is a data line
+        // rather than a group name comment (which would've started
+        // the first group). How should we handle it?
+        currentGroup.add(currentEmoji);
     }
-
 
     // Okay, finished all our lines. Our current group is the last one
     // and hasn't been submitted, so submit it now.
     groups.add(currentGroup);
+
 
     // Finally, load all the groups into the backend.
     for (EmojiGroup group: groups) {
