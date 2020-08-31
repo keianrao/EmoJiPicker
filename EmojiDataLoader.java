@@ -22,7 +22,7 @@ public void loadEmojiData(Backend backend) throws FileNotFoundException, IOExcep
     }
 
     List<String> original = linesFromFileAsList(testDataFile);
-    List<SerialisedEmojiGroup> assembled = 
+    List<SerialisedEmojiGroup> assembled =
         assembleSerialisedEmojiGroups(original);
     List<EmojiGroup> deserialised = deserialiseEmojiGroups(assembled);
 
@@ -104,11 +104,11 @@ public static List<SerialisedEmojiGroup> assembleSerialisedEmojiGroups(List<Stri
 }
 
 public static boolean isGroupNameLine(String line) {
-        return line.matches("#\\s*group:.*");
+    return line.matches("#\\s*group:.*");
 }
 
 public static boolean isDataLine(String line) {
-        return line.matches("[^#].+;.+");
+    return line.matches("[^#].+;.+");
 }
 
 
@@ -118,13 +118,13 @@ public static List<EmojiGroup> deserialiseEmojiGroups(List<SerialisedEmojiGroup>
 
     for (SerialisedEmojiGroup serialisedGroup: serialisedEmojiGroups) {
         EmojiGroup deserialisedGroup = new EmojiGroup();
-        
+
         // Parse the group name line.
-        String[] groupNameLineFields = 
+        String[] groupNameLineFields =
             serialisedGroup.groupNameLine.split(":", 2);
         assert groupNameLineFields.length == 2;
         deserialisedGroup.groupID = groupNameLineFields[1].trim();
- 
+
         // Parse each data line.
         for (String dataLine: serialisedGroup.dataLines) {
             String[] dataLineFields = dataLine
@@ -141,7 +141,7 @@ public static List<EmojiGroup> deserialiseEmojiGroups(List<SerialisedEmojiGroup>
             String[] serialisedCodePoints = dataLineFields[0].split("\\s+");
             StringBuilder qualifiedSequenceBuilder = new StringBuilder();
             for (String serialisedCodePoint: serialisedCodePoints) {
-                int deserialisedCodePoint = 
+                int deserialisedCodePoint =
                     parseUnicodeScalar(serialisedCodePoint);
                 qualifiedSequenceBuilder
                     .append(Character.toChars(deserialisedCodePoint));

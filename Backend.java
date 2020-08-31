@@ -32,6 +32,10 @@ public void addToEmojiGroup(String groupID, List<Emoji> emojis) {
     group.addAll(emojis);
 }
 
+public List<String> getEmojiGroupIDs() {
+    return new ArrayList<>(emojiGroups.keySet());
+}
+
 
 
 //  Structs     //  \\  //  \\  //  \\  //  \\
