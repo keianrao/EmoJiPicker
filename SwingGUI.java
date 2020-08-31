@@ -56,7 +56,7 @@ public void displayEmojiGroup(String groupID) {
 
 //  Private classes     //  \\  //  \\  //  \\  //  \\
 
-private static class EmojiButton extends JButton {
+private class EmojiButton extends JButton {
     final Backend.Emoji emoji;
 
     EmojiButton(Backend.Emoji emoji) {
@@ -70,16 +70,23 @@ private static class EmojiButton extends JButton {
     }
 }
 
-private static class EmojiGroupButton extends JToggleButton {
+private class EmojiGroupButton extends JToggleButton {
     final String groupID;
 
     EmojiGroupButton(String groupID) {
         this.groupID = groupID;
 
-        char initialLetter = groupID.isEmpty() ? ' ' : groupID.charAt(0);
-        setText(Character.toString(initialLetter));
-        // For now, we go with this. Later on we'll set our text as
-        // the first emoji in the emoji group.
+        {
+            List<Backend.Emoji> emojiGroup = backend.getEmojiGroup(groupID);
+            if (emojiGroup.isEmpty()) {
+                char initialLetter =
+                    groupID.isEmpty() ? ' ' :  groupID.charAt(0);
+                setText(Character.toString(initialLetter));
+            }
+            else {
+                setText(emojiGroup.get(0).qualifiedSequence);
+            }
+        }
 
         setMargin(new Insets(0, 0, 0, 0));
         setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
@@ -99,6 +106,10 @@ private static abstract class ScrollableButtonPanel extends JPanel implements Sc
         * [This thread](https://stackoverflow.com/questions/48269796/java-jscrollpane-and-flowlayout) and it links to Rob Carnick's [WrapLayout](https://tips4java.wordpress.com/2008/11/06/wrap-layout/).
         * One can arrive at this conclusion independently, but it is an
         * expert level task, writing your own layout manager code.
+        *
+        * There is also a [OpenJDK bug](https://bugs.openjdk.java.net/browse/JDK-5082531), started and fully discussed within 2004. Interestingly,
+        * everyone was in agreement that AWT's layout API should be
+        * upgraded to support it. Yet it never was fixed that year.
         *
         * The approach I'll go for is to instead use a GridLayout and
         * dynamically adjust the number of columns during resize events.
@@ -129,10 +140,10 @@ private static abstract class ScrollableButtonPanel extends JPanel implements Sc
 
 //  Private constants   //  \\  //  \\  //  \\  //  \\
 
-private static final int BUTTON_WIDTH = 24;
-private static final int BUTTON_HEIGHT = 24;
-private static final int BUTTONPANEL_HGAP = 2;
-private static final int BUTTONPANEL_VGAP = 2;
+private static final int BUTTON_WIDTH = 28;
+private static final int BUTTON_HEIGHT = 28;
+private static final int BUTTONPANEL_HGAP = 3;
+private static final int BUTTONPANEL_VGAP = 3;
 
 
 
