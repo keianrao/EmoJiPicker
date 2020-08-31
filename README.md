@@ -17,6 +17,6 @@ The second part for now will only be manually tested.
 
 <hr>
 
-Last demo of the program:
+Latest demo of the program:
 
 ![The emoji picker is a tall native GUI window. It has a text field at the top, a button box below it for emoji groups, then a bigger button box for the emojis within the currently selected group. The button for an emoji group is clicked to select it, updating the emoji buttons below. Then the emoji buttons are clicked, which appends the emoji to the text field. The text in the field is selected and copied to the clipboard.](Demo.gif)
