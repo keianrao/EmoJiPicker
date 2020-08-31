@@ -85,6 +85,30 @@ private class EmojiGroupButton extends JToggleButton {
             }
             else {
                 setText(emojiGroup.get(0).qualifiedSequence);
+                /*
+                * Our button widths have just enough for one rendered glyph.
+                * But if you're on a system that doesn't have a powerful
+                * emoji font, but instead a basic font that has text
+                * representations of the emojis - like my own system -
+                * then sequences with one modifier base and multiple modifiers
+                * are going to be rendered as multiple glyphs.
+                * And multiple glyphs won't fit into the button width,
+                * so what happens is the button takes the first char of
+                * qualifiedSequence, then adds an elipsis.
+                * Two chars still don't quite fit into the button width,
+                * and when the button takes the first char like that
+                * rather than as many chars for one renderable glyph,
+                * that first char is probably a surrogate character,
+                * which can't be rendered so it just becomes a tofu.
+                *
+                * It's rather bad because it's not that the button is broken,
+                * if you press it the whole qualifiedSequence is appended to
+                * pickupField and it actually renders fine. But the button
+                * labels don't work.
+                *
+                * I'm wondering what happens if you have a powerful emoji
+                * font on the system. But I can't tell since I don't have that.
+                */
             }
         }
 
