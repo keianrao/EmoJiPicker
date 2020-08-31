@@ -7,13 +7,21 @@ import javax.swing.JButton;
 import javax.swing.JToggleButton;
 import javax.swing.ButtonGroup;
 import javax.swing.BorderFactory;
+import javax.swing.JScrollPane;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
+import javax.swing.BoxLayout;
+import javax.swing.border.Border;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
@@ -33,6 +41,8 @@ public void setFrameVisible(boolean visibility) {
 public void displayEmojiGroup(String groupID) {
     List<Backend.Emoji> emojiGroup = backend.getEmojiGroup(groupID);
 
+    emojiButtonsPanel.removeAll();
+    emojiButtonsPanel.repaint();
     for (Backend.Emoji emoji: emojiGroup) {
         EmojiButton button = new EmojiButton(emoji);
         emojiButtonsPanel.add(button);
@@ -46,7 +56,7 @@ public void displayEmojiGroup(String groupID) {
 
 //  Private classes     //  \\  //  \\  //  \\  //  \\
 
-class EmojiButton extends JButton {
+private static class EmojiButton extends JButton {
     final Backend.Emoji emoji;
 
     EmojiButton(Backend.Emoji emoji) {
@@ -60,7 +70,7 @@ class EmojiButton extends JButton {
     }
 }
 
-class EmojiGroupButton extends JToggleButton {
+private static class EmojiGroupButton extends JToggleButton {
     final String groupID;
 
     EmojiGroupButton(String groupID) {
@@ -73,6 +83,44 @@ class EmojiGroupButton extends JToggleButton {
 
         setMargin(new Insets(0, 0, 0, 0));
         setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
+    }
+}
+
+private static abstract class ScrollableButtonPanel extends JPanel implements Scrollable {
+
+    public Dimension getPreferredScrollableViewportSize() {
+        /*
+        * JScrollPane and FlowLayout hilariously don't go well together..
+        * FlowLayout always sets its preferred size for a single row,
+        * and JScrollPane obliges, so no matter what you do, the view
+        * becomes one big horizontally scrollable one. ScrollPaneLayout
+        * uses it so confidently that it *never* called this method!
+        *
+        * [This thread](https://stackoverflow.com/questions/48269796/java-jscrollpane-and-flowlayout) and it links to Rob Carnick's [WrapLayout](https://tips4java.wordpress.com/2008/11/06/wrap-layout/).
+        * One can arrive at this conclusion independently, but it is an
+        * expert level task, writing your own layout manager code.
+        *
+        * The approach I'll go for is to instead use a GridLayout and
+        * dynamically adjust the number of columns during resize events.
+        * It's not nice but, it gets us what we need..
+        */
+        return getPreferredSize();
+    }
+
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        if (orientation == SwingConstants.HORIZONTAL) {
+            return BUTTON_WIDTH + (2 * BUTTONPANEL_HGAP);
+        }
+        else {
+            return BUTTON_HEIGHT + (2 * BUTTONPANEL_HGAP);
+        }
+    }
+
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        // We don't have blocks, so, make it up, I guess..
+        return
+            getScrollableUnitIncrement(visibleRect, orientation, direction)
+            * 4;
     }
 }
 
@@ -99,6 +147,8 @@ JPanel upperPanel;
 JTextField pickupField;
 JPanel emojiGroupButtonsBar;
 JPanel emojiButtonsPanel;
+JScrollPane emojiGroupButtonsBarScrollPane;
+JScrollPane emojiButtonsPanelScrollPane;
 
 String currentlySelectedGroupID = null;
 
@@ -110,6 +160,7 @@ private void syncWithBackend() {
     pickupField.setText("");
 
     emojiGroupButtonsBar.removeAll();
+
     List<String> groupIDs = backend.getEmojiGroupIDs();
     ButtonGroup buttonGroup = new ButtonGroup();
     for (String groupID: groupIDs) {
@@ -119,7 +170,6 @@ private void syncWithBackend() {
         emojiGroupButtonsBar.add(button);
         button.addActionListener(this);
     }
-    emojiGroupButtonsBar.validate();
 }
 
 public void actionPerformed(ActionEvent e) {
@@ -150,29 +200,70 @@ SwingGUI(Backend backend) {
     mainframe.setSize(340, 512);
 
     pickupField = new JTextField();
-    emojiGroupButtonsBar = new JPanel();
-    upperPanel = new JPanel();
-    upperPanel.setLayout(new GridLayout(2, 0));
-    upperPanel.add(pickupField);
-    upperPanel.add(emojiGroupButtonsBar);
-    upperPanel.setPreferredSize(new Dimension(0, (int)(BUTTON_HEIGHT * 2.5)));
-
-    emojiButtonsPanel = new JPanel();
-    emojiButtonsPanel.setLayout(new FlowLayout(
-        FlowLayout.LEFT,
+    pickupField.setPreferredSize(new Dimension(0, BUTTON_HEIGHT));
+    emojiGroupButtonsBar = new ScrollableButtonPanel() {
+        public boolean getScrollableTracksViewportHeight() { return true; }
+        public boolean getScrollableTracksViewportWidth() { return false; }
+    };
+    emojiGroupButtonsBar.setLayout(new FlowLayout(
+        FlowLayout.CENTER,
         BUTTONPANEL_HGAP, BUTTONPANEL_VGAP
     ));
+    /*
+    * Even though we said centre alignment here, JScrollPane is going to
+    * give emojiGroupButtonsBar its preferred width as its final width.
+    * So it's going to look left-aligned whenever the number of
+    * emoji group buttons are less than would fill the window's width, etc.
+    * It's not a big deal so I'll leave it unfixed.
+    */
+    emojiGroupButtonsBarScrollPane = new JScrollPane(
+        emojiGroupButtonsBar,
+        JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+    );
+    emojiGroupButtonsBarScrollPane.setPreferredSize(
+        new Dimension(0, BUTTON_HEIGHT * 3)
+    );
+    upperPanel = new JPanel();
+    upperPanel.setLayout(new BoxLayout(upperPanel, BoxLayout.Y_AXIS));
+    upperPanel.add(pickupField);
+    upperPanel.add(emojiGroupButtonsBarScrollPane);
+    upperPanel.setPreferredSize(new Dimension(0, (int)(BUTTON_HEIGHT * 3)));
+
+    emojiButtonsPanel = new ScrollableButtonPanel() {
+        public boolean getScrollableTracksViewportHeight() { return false; }
+        public boolean getScrollableTracksViewportWidth() { return true; }
+    };
+    GridLayout emojiButtonsPanelLayout = new GridLayout(
+        0, 1, BUTTONPANEL_HGAP, BUTTONPANEL_VGAP
+    );
+    emojiButtonsPanel.setLayout(emojiButtonsPanelLayout);
+    emojiButtonsPanelScrollPane = new JScrollPane(
+        emojiButtonsPanel,
+        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+    );
+    emojiButtonsPanelScrollPane.addComponentListener(
+        new ComponentAdapter() {
+            public void componentResized(ComponentEvent eC) {
+                Dimension newSize = eC.getComponent().getSize();
+                int unit = BUTTON_WIDTH + BUTTONPANEL_HGAP;
+                int columns = newSize.width / unit;
+                emojiButtonsPanelLayout.setColumns(columns);
+            }
+        }
+    );
 
     mainpanel = new JPanel();
-    mainpanel.setBorder(
-        BorderFactory.createEmptyBorder(
-            BUTTONPANEL_VGAP, BUTTONPANEL_HGAP,
-            BUTTONPANEL_VGAP, BUTTONPANEL_HGAP
-        )
-    );
-    mainpanel.setLayout(new BorderLayout());
+    mainpanel.setLayout(new BorderLayout(
+        BUTTONPANEL_HGAP, BUTTONPANEL_VGAP
+    ));
+    mainpanel.setBorder(BorderFactory.createEmptyBorder(
+        BUTTONPANEL_VGAP, BUTTONPANEL_HGAP,
+        BUTTONPANEL_VGAP, BUTTONPANEL_HGAP
+    ));
     mainpanel.add(upperPanel, BorderLayout.NORTH);
-    mainpanel.add(emojiButtonsPanel, BorderLayout.CENTER);
+    mainpanel.add(emojiButtonsPanelScrollPane, BorderLayout.CENTER);
     mainframe.setContentPane(mainpanel);
 
     syncWithBackend();
