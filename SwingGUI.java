@@ -4,17 +4,21 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JOptionPane;
 import javax.swing.JButton;
+import javax.swing.JToggleButton;
+import javax.swing.ButtonGroup;
 import javax.swing.BorderFactory;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
-class SwingGUI {
+class SwingGUI implements ActionListener {
 
 //  Interface   //  \\  //  \\  //  \\  //  \\  //  \\
 
@@ -27,8 +31,14 @@ public void setFrameVisible(boolean visibility) {
 }
 
 public void displayEmojiGroup(String groupID) {
-    // Iterate through button bar, if any buttons with that group ID
-    // then show the button as highlighted. Somehow.
+    List<Backend.Emoji> emojiGroup = backend.getEmojiGroup(groupID);
+
+    for (Backend.Emoji emoji: emojiGroup) {
+        EmojiButton button = new EmojiButton(emoji);
+        emojiButtonsPanel.add(button);
+        button.addActionListener(this);
+    }
+    emojiButtonsPanel.revalidate();
 }
 
 
@@ -47,6 +57,22 @@ class EmojiButton extends JButton {
         setMargin(new Insets(0, 0, 0, 0));
         setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         setBorder(BorderFactory.createRaisedBevelBorder());
+    }
+}
+
+class EmojiGroupButton extends JToggleButton {
+    final String groupID;
+
+    EmojiGroupButton(String groupID) {
+        this.groupID = groupID;
+
+        char initialLetter = groupID.isEmpty() ? ' ' : groupID.charAt(0);
+        setText(Character.toString(initialLetter));
+        // For now, we go with this. Later on we'll set our text as
+        // the first emoji in the emoji group.
+
+        setMargin(new Insets(0, 0, 0, 0));
+        setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
     }
 }
 
@@ -74,6 +100,8 @@ JTextField pickupField;
 JPanel emojiGroupButtonsBar;
 JPanel emojiButtonsPanel;
 
+String currentlySelectedGroupID = null;
+
 
 
 //  Private methods     //  \\  //  \\  //  \\  //  \\
@@ -83,21 +111,30 @@ private void syncWithBackend() {
 
     emojiGroupButtonsBar.removeAll();
     List<String> groupIDs = backend.getEmojiGroupIDs();
+    ButtonGroup buttonGroup = new ButtonGroup();
     for (String groupID: groupIDs) {
-        char initialLetter = groupID.isEmpty() ? ' ' : groupID.charAt(0);
-        JButton placeHolderButton = new JButton();
-        placeHolderButton.setText(Character.toString(initialLetter));
-        placeHolderButton.setMargin(new Insets(0, 0, 0, 0));
-        placeHolderButton.setPreferredSize(
-            new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT)
-        );
-        emojiGroupButtonsBar.add(placeHolderButton);
+        EmojiGroupButton button = new EmojiGroupButton(groupID);
+        button.setSelected(groupID.equals(currentlySelectedGroupID));
+        buttonGroup.add(button);
+        emojiGroupButtonsBar.add(button);
+        button.addActionListener(this);
     }
     emojiGroupButtonsBar.validate();
+}
 
-    emojiButtonsPanel.removeAll();
-    // Rebuild buttons here
-    emojiButtonsPanel.validate();
+public void actionPerformed(ActionEvent e) {
+    if (e.getSource() instanceof EmojiButton) {
+        EmojiButton emojiButton = (EmojiButton)e.getSource();
+        pickupField.setText(
+            pickupField.getText()
+            + emojiButton.emoji.qualifiedSequence
+        );
+    }
+    else if (e.getSource() instanceof EmojiGroupButton) {
+        EmojiGroupButton emojiGroupButton = (EmojiGroupButton)e.getSource();
+        currentlySelectedGroupID = emojiGroupButton.groupID;
+        displayEmojiGroup(emojiGroupButton.groupID);
+    }
 }
 
 

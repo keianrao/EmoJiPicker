@@ -18,12 +18,18 @@ public List<Emoji> getAllEmojis() {
 }
 
 public List<Emoji> getEmojiGroup(String groupID) {
+    assert groupID != null;
+
     List<Emoji> group = emojiGroups.get(groupID);
     if (group == null) return Collections.emptyList();
     else return new ArrayList<>(group);
 }
 
 public void addToEmojiGroup(String groupID, List<Emoji> emojis) {
+    assert groupID != null;
+    assert emojis != null;
+    if (emojis.size() == 0) return;
+
     List<Emoji> group = emojiGroups.get(groupID);
     if (group == null) {
         group = new ArrayList<>();
