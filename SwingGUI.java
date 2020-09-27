@@ -293,7 +293,7 @@ SwingGUI(Backend backend) {
     emojiButtonsPanel.setLayout(emojiButtonsPanelLayout);
     emojiButtonsPanelScrollPane = new JScrollPane(
         emojiButtonsPanel,
-        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
         JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
     );
     emojiButtonsPanelScrollPane.addComponentListener(

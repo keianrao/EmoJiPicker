@@ -1,11 +1,21 @@
 
+OPTIONS=-encoding utf-8
+# This program is explicitly a Unicode program (arguably a UTF16 one).
+# Tests for EmojiDataLoader have hardcoded emoji in them.
+# ..Some systems, like my own CDE environment which defaults to the 'C' locale,
+# do not have some form of Unicode as their default character encoding.
+# Then, as javac follows the system's default character encoding by default,
+# it fails to compile.
+# ..Hence mandatory '-encoding utf-8' here.
+
+
 all: main tests
 
 main:
-	javac *.java
+	javac $(OPTIONS) *.java
 
 tests:
-	javac tests/*.java
+	javac $(OPTIONS) tests/*.java
 
 clean:
 	rm *.class || :
