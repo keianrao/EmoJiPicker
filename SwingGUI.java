@@ -29,13 +29,16 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import javax.swing.BoxLayout;
-import javax.swing.border.Border;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
@@ -63,6 +66,7 @@ public void displayEmojiGroup(String groupID) {
     emojiButtonsPanel.repaint();
     for (Backend.Emoji emoji: emojiGroup) {
         EmojiButton button = new EmojiButton(emoji);
+        button.setFont(regularFont);
         emojiButtonsPanel.add(button);
         button.addActionListener(this);
     }
@@ -77,14 +81,67 @@ public void displayEmojiGroup(String groupID) {
 private class EmojiButton extends JButton {
     final Backend.Emoji emoji;
 
+    public void paintComponent(Graphics g) {
+        Color backgroundColour = getBackground();
+             
+        g.setColor(adjustColour(backgroundColour, +15));
+        g.fillArc(0, 0, getWidth(), getHeight(), 45, 180);
+        g.setColor(adjustColour(backgroundColour, +30));
+        g.fillArc(0, 0, getWidth(), getHeight(), 90, 90);
+        g.setColor(adjustColour(backgroundColour, +45));
+        g.fillArc(0, 0, getWidth(), getHeight(), 120, 30);
+
+        g.setColor(adjustColour(backgroundColour, -15));
+        g.fillArc(0, 0, getWidth(), getHeight(), 225, 180);
+        g.setColor(adjustColour(backgroundColour, -30));
+        g.fillArc(0, 0, getWidth(), getHeight(), 260, 90);
+        g.setColor(adjustColour(backgroundColour, -45));
+        g.fillArc(0, 0, getWidth(), getHeight(), 290, 30);
+        
+        g.setColor(getBackground());
+        g.fillOval(
+            BUTTON_BORDER_THICKNESS / 2, 
+            BUTTON_BORDER_THICKNESS / 2, 
+            getWidth() - BUTTON_BORDER_THICKNESS, 
+            getHeight() - BUTTON_BORDER_THICKNESS
+        );
+        
+        super.paintComponent(g);
+        /*
+        * No one on the internet bothered discussing if this is legal.
+        * (Calling super.paintComponent at the end)
+        * Given what I know about what this method does, and the fact that
+        * you can remove it outright safely.. this is probably fine.
+        */
+    }
+    
+    private Color adjustColour(Color colour, int change) {
+        int r = colour.getRed() + change;
+        int g = colour.getGreen() + change;
+        int b = colour.getBlue() + change;
+        if (r > 255) r = 255; if (r < 0) r = 0;
+        if (g > 255) g = 255; if (g < 0) g = 0;
+        if (b > 255) b = 255; if (b < 0) b = 0;    
+        return new Color(r, g, b);
+    }
+
     EmojiButton(Backend.Emoji emoji) {
         super(emoji.qualifiedSequence);
 
         this.emoji = emoji;
 
+        {
+            setBackground(new Color(216, 216, 216));
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            // These should be removed in the future
+            // in favour of something less whimsical..
+        }
+        
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
         setMargin(new Insets(0, 0, 0, 0));
         setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-        setBorder(BorderFactory.createRaisedBevelBorder());
     }
 }
 
@@ -129,6 +186,8 @@ private class EmojiGroupButton extends JToggleButton {
                 */
             }
         }
+        
+        setFocusPainted(false);
 
         setMargin(new Insets(0, 0, 0, 0));
         setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
@@ -182,10 +241,11 @@ private static abstract class ScrollableButtonPanel extends JPanel implements Sc
 
 //  Private constants   //  \\  //  \\  //  \\  //  \\
 
-private static final int BUTTON_WIDTH = 28;
-private static final int BUTTON_HEIGHT = 28;
-private static final int BUTTONPANEL_HGAP = 3;
-private static final int BUTTONPANEL_VGAP = 3;
+private static final int BUTTON_WIDTH = 40;
+private static final int BUTTON_HEIGHT = 40;
+private static final int BUTTONPANEL_HGAP = 6;
+private static final int BUTTONPANEL_VGAP = 6;
+private static final int BUTTON_BORDER_THICKNESS = 6;
 
 
 
@@ -205,6 +265,9 @@ JScrollPane emojiButtonsPanelScrollPane;
 
 String currentlySelectedGroupID = null;
 
+Font regularFont;
+Font largerFont;
+
 
 
 //  Private methods     //  \\  //  \\  //  \\  //  \\
@@ -219,7 +282,8 @@ private void syncWithBackend() {
     for (String groupID: groupIDs) {
         EmojiGroupButton button = new EmojiGroupButton(groupID);
         button.setSelected(groupID.equals(currentlySelectedGroupID));
-        buttonGroup.add(button);
+        button.setFont(largerFont);
+        buttonGroup.add(button);     
         emojiGroupButtonsBar.add(button);
         button.addActionListener(this);
     }
@@ -242,6 +306,16 @@ public void actionPerformed(ActionEvent e) {
 
 
 
+private void setFont(Font font, float regularSize, float largerSize) {
+    regularFont = font.deriveFont(regularSize);
+    largerFont = font.deriveFont(largerSize);
+    pickupField.setFont(largerFont);
+    syncWithBackend();
+    // Lazy hacky way to recreate emoji group buttons    
+}
+
+
+
 //  Constructors    \\  //  \\  //  \\  //  \\  //  \\
 
 SwingGUI(Backend backend) {
@@ -254,6 +328,7 @@ SwingGUI(Backend backend) {
 
     pickupField = new JTextField();
     pickupField.setPreferredSize(new Dimension(0, BUTTON_HEIGHT));
+    pickupField.setBorder(BorderFactory.createLoweredBevelBorder());
     emojiGroupButtonsBar = new ScrollableButtonPanel() {
         public boolean getScrollableTracksViewportHeight() { return true; }
         public boolean getScrollableTracksViewportWidth() { return false; }
@@ -277,6 +352,7 @@ SwingGUI(Backend backend) {
     emojiGroupButtonsBarScrollPane.setPreferredSize(
         new Dimension(0, BUTTON_HEIGHT * 3)
     );
+    emojiGroupButtonsBarScrollPane.setBorder(null);
     upperPanel = new JPanel();
     upperPanel.setLayout(new BoxLayout(upperPanel, BoxLayout.Y_AXIS));
     upperPanel.add(pickupField);
@@ -306,6 +382,7 @@ SwingGUI(Backend backend) {
             }
         }
     );
+    emojiButtonsPanelScrollPane.setBorder(null);
 
     mainpanel = new JPanel();
     mainpanel.setLayout(new BorderLayout(
@@ -319,7 +396,7 @@ SwingGUI(Backend backend) {
     mainpanel.add(emojiButtonsPanelScrollPane, BorderLayout.CENTER);
     mainframe.setContentPane(mainpanel);
 
-    syncWithBackend();
+    setFont(mainpanel.getFont(), 22f, 22f);
 }
 
 
@@ -343,7 +420,7 @@ public static void main(String... args) throws FileNotFoundException, IOExceptio
     }
 
     SwingGUI gui = new SwingGUI(backend);
-
+    
     gui.setFrameVisible(true);
 }
 
