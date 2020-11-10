@@ -29,6 +29,7 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import javax.swing.BoxLayout;
+import javax.swing.JTextArea;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.BorderLayout;
@@ -83,7 +84,7 @@ private class EmojiButton extends JButton {
 
     public void paintComponent(Graphics g) {
         Color backgroundColour = getBackground();
-             
+
         g.setColor(adjustColour(backgroundColour, +15));
         g.fillArc(0, 0, getWidth(), getHeight(), 45, 180);
         g.setColor(adjustColour(backgroundColour, +30));
@@ -97,15 +98,15 @@ private class EmojiButton extends JButton {
         g.fillArc(0, 0, getWidth(), getHeight(), 260, 90);
         g.setColor(adjustColour(backgroundColour, -45));
         g.fillArc(0, 0, getWidth(), getHeight(), 290, 30);
-        
+
         g.setColor(getBackground());
         g.fillOval(
-            BUTTON_BORDER_THICKNESS / 2, 
-            BUTTON_BORDER_THICKNESS / 2, 
-            getWidth() - BUTTON_BORDER_THICKNESS, 
+            BUTTON_BORDER_THICKNESS / 2,
+            BUTTON_BORDER_THICKNESS / 2,
+            getWidth() - BUTTON_BORDER_THICKNESS,
             getHeight() - BUTTON_BORDER_THICKNESS
         );
-        
+
         super.paintComponent(g);
         /*
         * No one on the internet bothered discussing if this is legal.
@@ -114,14 +115,14 @@ private class EmojiButton extends JButton {
         * you can remove it outright safely.. this is probably fine.
         */
     }
-    
+
     private Color adjustColour(Color colour, int change) {
         int r = colour.getRed() + change;
         int g = colour.getGreen() + change;
         int b = colour.getBlue() + change;
         if (r > 255) r = 255; if (r < 0) r = 0;
         if (g > 255) g = 255; if (g < 0) g = 0;
-        if (b > 255) b = 255; if (b < 0) b = 0;    
+        if (b > 255) b = 255; if (b < 0) b = 0;
         return new Color(r, g, b);
     }
 
@@ -137,9 +138,9 @@ private class EmojiButton extends JButton {
             // These should be removed in the future
             // in favour of something less whimsical..
         }
-        
+
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        
+
         setMargin(new Insets(0, 0, 0, 0));
         setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
     }
@@ -186,7 +187,7 @@ private class EmojiGroupButton extends JToggleButton {
                 */
             }
         }
-        
+
         setFocusPainted(false);
 
         setMargin(new Insets(0, 0, 0, 0));
@@ -283,7 +284,7 @@ private void syncWithBackend() {
         EmojiGroupButton button = new EmojiGroupButton(groupID);
         button.setSelected(groupID.equals(currentlySelectedGroupID));
         button.setFont(largerFont);
-        buttonGroup.add(button);     
+        buttonGroup.add(button);
         emojiGroupButtonsBar.add(button);
         button.addActionListener(this);
     }
@@ -311,7 +312,7 @@ private void setFont(Font font, float regularSize, float largerSize) {
     largerFont = font.deriveFont(largerSize);
     pickupField.setFont(largerFont);
     syncWithBackend();
-    // Lazy hacky way to recreate emoji group buttons    
+    // Lazy hacky way to recreate emoji group buttons
 }
 
 
@@ -420,46 +421,46 @@ public static void main(String... args) throws FileNotFoundException, IOExceptio
     }
 
     SwingGUI gui = new SwingGUI(backend);
-    
+
     gui.setFrameVisible(true);
 }
 
 private static void showMissingEmojiDataFileDialog() {
     final String MISSING_EMOJI_FILE_DIALOGUE_MESSAGE = (
-        "EmoJiPicker loads emojis from a certain data file. " +
-        "It is called 'emoji-test.txt', and is provided by Unicode. " +
-        "Our data loader said that it couldn't find that file at " +
-        "where it expects in the current directory.\n\n" +
+        "EmoJiPicker loads emojis from a certain data file. \n" +
+        "It is called 'emoji-test.txt', and is provided by Unicode. \n" +
+        "Our data loader said that it couldn't find that file \n" +
+        "at where it expects in the current directory.\n\n" +
 
-        "Without the file the program knows no emojis, so " +
+        "Without the file the program knows no emojis, so \n" +
         "it cannot show any buttons for them in the picker.\n\n" +
 
-        "One of two things is probably happening. " +
-        "First is, the file is genuinely missing, and you'd need to " +
-        "download it and place it where this program expects it. " +
-        "(That is probably in the 'data' folder inside where " +
-        "this program resides.) " +
-        "Second is, the current directory when this program is running (now) " +
-        "isn't where the program is, but rather something like your " +
-        "\"home directory\". This case is more likely and, to fix it, " +
-        "you need to navigate to the folder the program is in then " +
-        "start the program from there.\n\n" +
+        "One of two things is probably happening. \n" +
+        "First is, the file is genuinely missing, and you'd need to \n" +
+        "download it and place it where this program expects it. \n" +
+        "(That is probably in the 'data' folder inside \n" +
+        "where this program resides.) \n" +
+        "Second is, the current directory when this program is \n" +
+        "running (now) isn't where the program is, but rather \n" +
+        "something like your \"home directory\". This case is \n" +
+        "more likely and, to fix it, you need to navigate to the\n" +
+        "folder the program is in then start the program from there.\n\n" +
 
-        "As mentioned, this program has no emoji to show, so " +
-        "we'll just quit for now. Apologies for the trouble.."
+        "As mentioned, this program has no emoji to show, so \n" +
+        "we'll just quit for now. Apologies for the trouble..\n"
     );
     JOptionPane.showMessageDialog(null, MISSING_EMOJI_FILE_DIALOGUE_MESSAGE);
 }
 
 private static void showIOExceptionDialog() {
     final String IO_EXCEPTION_DIALOGUE_MESSAGE = (
-        "We found the emoji data file and tried to load it, but " +
-        "then we got an IO exception. Which is a very rare type of problem. " +
-        "The program hasn't really started yet so it should be safe for " +
+        "We found the emoji data file and tried to load it, but \n" +
+        "then we got an IO exception. Which is a very rare type of problem. \n" +
+        "The program hasn't really started yet so it should be safe for \n" +
         "us to do the most appropriate course of action, which is quit.\n\n" +
 
-        "Try opening the program again after this, it might resolve.. " +
-        "If it doesn't, then there is some issue with the data file. " +
+        "Try opening the program again after this, it might resolve.. \n" +
+        "If it doesn't, then there is some issue with the data file. \n" +
         "Apologies about this.."
     );
     JOptionPane.showMessageDialog(null, IO_EXCEPTION_DIALOGUE_MESSAGE);
