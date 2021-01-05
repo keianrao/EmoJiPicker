@@ -1,31 +1,34 @@
 
-OPTIONS=-encoding utf-8
+COMPILE_OPTIONS=\
+	-encoding utf-8 \
 # This program is explicitly a Unicode program (arguably a UTF16 one).
-# Tests for EmojiDataLoader have hardcoded emoji in them.
-# ..Some systems, like my own CDE environment which defaults to the 'C' locale,
-# do not have some form of Unicode as their default character encoding.
-# Then, as javac follows the system's default character encoding by default,
-# it fails to compile.
-# ..Hence mandatory '-encoding utf-8' here.
+# The test code for EmojiDataLoader have hardcoded emoji in them - but
+# by default, javac follows the system's default character encoding. Then,
+# some systems, like my own CDE environment which uses the 'C' locale,
+# do not use some Unicode character encoding as their default. Which makes
+# javac fail in compiling the tests. Therefore, '-encoding utf-8'.
 
+RUN_OPTIONS=\
+	-Dawt.useSystemAAFontSettings=gasp
+# 
 
 all: main tests
 
 main:
-	javac $(OPTIONS) *.java
+	javac $(COMPILE_OPTIONS) *.java
 
 tests:
-	javac $(OPTIONS) tests/*.java
+	javac $(COMPILE_OPTIONS) tests/*.java
 
 clean:
 	rm *.class || :
 	rm tests/*.class || :
 
 run-main:
-	java SwingGUI
+	java $(RUN_OPTIONS) SwingGUI
 
 run-tests:
-	java -cp .:tests -ea EmojiDataLoaderTests
-	java -cp .:tests -ea BackendTests
+	java $(RUN_OPTIONS) -cp .:tests -ea EmojiDataLoaderTests
+	java $(RUN_OPTIONS) -cp .:tests -ea BackendTests
 
 .PHONY: all main tests clean run-main run-tests
